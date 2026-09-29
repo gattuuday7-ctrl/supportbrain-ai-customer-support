@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SupportBrain - AI Customer Support with Hindsight Memory</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header Bar -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="logo-icon">🧠</div>
+      <div>
+        <h1 class="logo-title">SupportBrain</h1>
+        <p class="logo-subtitle">AI Support Agent with Persistent <strong>Hindsight</strong> Memory</p>
+      </div>
+    </div>
+
+    <!-- Status Badges -->
+    <div class="header-status-group">
+      <div class="status-pill status-hindsight" id="hindsightStatus">
+        <span class="status-dot pulsing"></span>
+        <span>Hindsight: <strong id="hindsightStateText">Connected</strong></span>
+      </div>
+      <div class="status-pill status-groq" id="groqStatus">
+        <span class="status-dot"></span>
+        <span>LLM: <strong id="groqStateText">Loading...</strong></span>
+      </div>
+      <div class="status-pill status-count">
+        <span class="count-badge" id="memoryCountBadge">0</span>
+        <span>Memories Stored</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid Layout -->
+  <main class="dashboard-grid">
+    
+    <!-- LEFT PANEL: Customer Profile & Quick Demo Scenarios -->
+    <aside class="panel customer-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="panel-icon">👤</span>
+          <h2>Customer Profile</h2>
+        </div>
+        <span class="badge-subtle">Active Context</span>
+      </div>
+
+      <div class="panel-body">
+        <form id="customerForm" class="customer-form" onsubmit="event.preventDefault();">
+          <div class="form-group">
+            <label for="customerName">Customer Name</label>
+            <input type="text" id="customerName" class="form-input" value="Rahul Sharma" placeholder="e.g. Rahul Sharma" required />
+          </div>
+
+          <div class="form-group">
+            <label for="companyName">Company</label>
+            <input type="text" id="companyName" class="form-input" value="Acme Technologies" placeholder="e.g. Acme Technologies" required />
+          </div>
+
+          <div class="form-group">
+            <label for="productName">Product / Service</label>
+            <input type="text" id="productName" class="form-input" value="Enterprise Dashboard" placeholder="e.g. Enterprise Dashboard" required />
+          </div>
+        </form>
+
+        <div class="persona-switchers">
+          <label class="section-label">Quick Switch Demo Persona</label>
+          <div class="persona-buttons">
+            <button class="btn btn-secondary btn-sm active" id="btnPersonaRahul" onclick="selectPersona('rahul')">
+              Rahul (Acme Tech)
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btnPersonaSarah" onclick="selectPersona('sarah')">
+              Sarah (Cyberdyne)
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btnPersonaNew" onclick="selectPersona('new')">
+              + New Customer
+            </button>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- Hackathon One-Click Demo Prompts -->
+        <div class="demo-scenarios">
+          <label class="section-label">
+            <span>Hackathon Judge Demo Prompts</span>
+            <span class="hint-tag">Click to send</span>
+          </label>
+
+          <button class="prompt-chip" onclick="sendQuickPrompt('My name is Rahul Sharma. I work at Acme Technologies and we use Enterprise Dashboard.')">
+            <span class="chip-number">1</span>
+            <span class="chip-text">"My name is Rahul Sharma. I work at Acme Technologies..."</span>
+          </button>
+
+          <button class="prompt-chip highlight-chip" onclick="sendQuickPrompt('I\'m having the login problem again.')">
+            <span class="chip-number">2</span>
+            <span class="chip-text">"I'm having the login problem again." <em class="sparkle">✨ Recalls Solution!</em></span>
+          </button>
+
+          <button class="prompt-chip" onclick="sendQuickPrompt('What is my company and which product do we use?')">
+            <span class="chip-number">3</span>
+            <span class="chip-text">"What is my company and which product do we use?"</span>
+          </button>
+
+          <button class="prompt-chip" onclick="sendQuickPrompt('We fixed it by clearing the cache, please remember this for next time.')">
+            <span class="chip-number">4</span>
+            <span class="chip-text">"We fixed it by clearing the cache, please remember this..."</span>
+          </button>
+        </div>
+
+        <div class="panel-footer-actions">
+          <button class="btn btn-outline btn-sm w-full" onclick="seedSampleMemories()">
+            🌱 Seed Example Memories (Rahul)
+          </button>
+          <button class="btn btn-ghost btn-sm w-full text-danger" onclick="clearMemoryBank()">
+            🗑️ Clear Memory Bank
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER PANEL: Chat Interface -->
+    <section class="panel chat-panel">
+      <div class="panel-header chat-header">
+        <div class="chat-header-info">
+          <div class="avatar-agent">🤖</div>
+          <div>
+            <h2 class="chat-title">Support Conversation</h2>
+            <p class="chat-subtitle" id="chatActiveUser">Chatting with Rahul Sharma &bull; Enterprise Dashboard</p>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="clearChatMessages()" title="Clear chat window">Clear Chat</button>
+      </div>
+
+      <!-- Messages Stream -->
+      <div class="chat-messages" id="chatMessages">
+        <div class="message-wrapper message-agent">
+          <div class="message-avatar">🤖</div>
+          <div class="message-bubble">
+            <div class="message-meta">SupportBrain AI</div>
+            <div class="message-text">
+              Hello! I'm <strong>SupportBrain</strong>, an AI customer support agent equipped with persistent memory powered by <strong>Hindsight</strong>. 
+              <br><br>
+              I remember your previous tickets, resolved errors, and team preferences across sessions. How can I help you today?
+            </div>
+            <div class="message-footer-tag">
+              <span class="memory-source-pill">⚡ Powered by Groq + Hindsight</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="chat-input-area">
+        <form id="chatForm" class="chat-form" onsubmit="handleChatSubmit(event)">
+          <input 
+            type="text" 
+            id="chatInput" 
+            class="chat-input" 
+            placeholder="Type your message or click a prompt on the left... (Press Enter to send)" 
+            autocomplete="off"
+            required
+          />
+          <button type="submit" id="btnSend" class="btn btn-primary btn-send">
+            <span>Send</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Hindsight Memory Panel (Proof for Hackathon Judges) -->
+    <aside class="panel memory-panel">
+      <div class="panel-header memory-header">
+        <div class="panel-title">
+          <span class="panel-icon">💾</span>
+          <h2>Hindsight Memory</h2>
+        </div>
+        <span class="badge-hindsight">Hindsight Engine</span>
+      </div>
+
+      <!-- Tabs: Active Recall vs All Bank Memories -->
+      <div class="memory-tabs">
+        <button class="tab-btn active" id="tabActive" onclick="switchMemoryTab('active')">
+          Recalled for Turn
+          <span class="tab-badge" id="recalledCountBadge">0</span>
+        </button>
+        <button class="tab-btn" id="tabAll" onclick="switchMemoryTab('all')">
+          Full Bank
+          <span class="tab-badge" id="allCountBadge">0</span>
+        </button>
+      </div>
+
+      <div class="panel-body memory-body">
+        
+        <!-- View 1: Memories Recalled for the current interaction -->
+        <div id="recalledMemoriesContainer" class="memory-container">
+          <div class="memory-section-hint">
+            <strong>Real-time Recall:</strong> Memories fetched by Hindsight to inform the agent's latest answer.
+          </div>
+          <div id="recalledList" class="memory-cards-list">
+            <div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <p>No query made yet.</p>
+              <span>Send a message like <em>"I'm having the login problem again"</em> to watch Hindsight retrieve past solutions!</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 2: All Memories in Bank -->
+        <div id="allMemoriesContainer" class="memory-container" style="display: none;">
+          <div class="memory-section-hint">
+            <strong>Persistent Store:</strong> All knowledge units currently indexed in the Hindsight bank.
+          </div>
+          <div id="allMemoriesList" class="memory-cards-list">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+
+      <div class="memory-footer">
+        <div class="hindsight-branding">
+          <span class="hindsight-dot"></span>
+          <span>Hindsight Persistent Memory Bank: <code id="lblBankId">supportbrain-bank</code></span>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
